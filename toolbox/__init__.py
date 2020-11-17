@@ -100,6 +100,13 @@ class Toolbox:
         # Utterance selection
         func = lambda: self.load_from_browser(self.ui.browse_file())
         self.ui.browser_browse_button.clicked.connect(func)
+
+        #Audio book
+        func = lambda: self.load_book(self.ui.browse_book())
+        self.ui.load_book.clicked.connect(func)
+
+
+        #
         func = lambda: self.ui.draw_utterance(self.ui.selected_utterance, "current")
         self.ui.utterance_history.currentIndexChanged.connect(func)
         func = lambda: self.ui.play(self.ui.selected_utterance.wav, Synthesizer.sample_rate)
@@ -169,7 +176,28 @@ class Toolbox:
         self.ui.log("Loaded %s" % name)
 
         self.add_real_utterance(wav, name, speaker_name)
-        
+
+
+    def load_book(self, fpath=None):
+        if(fpath is None or fpath == ""):
+            return
+        if(fpath.suffix.lower() == ".txt"):
+            self.ui.text_prompt.clear()
+            file = open(fpath.absolute().as_posix(),mode='r')
+            text = file.read()
+            text = text.replace(".",".\n")
+            #text = text.replace(",",",\n")
+            #text = text.replace(":",":\n")
+            #text = text.replace("-","-\n")
+            #text = text.replace("!","!\n")
+            #text = text.replace("?","?\n")
+            file.close()
+            self.ui.text_prompt.appendPlainText(text)
+
+        else:
+            self.ui.log("Format is not supported")
+            return
+
     def record(self):
         wav = self.ui.record_one(encoder.sampling_rate, 5)
         if wav is None:
@@ -224,6 +252,7 @@ class Toolbox:
             seed = self.synthesizer.set_seed(None)
         
         texts = self.ui.text_prompt.toPlainText().split("\n")
+        
         embed = self.ui.selected_utterance.embed
         embeds = np.stack([embed] * len(texts))
         specs = self.synthesizer.synthesize_spectrograms(texts, embeds)
