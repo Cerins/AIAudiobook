@@ -10,6 +10,7 @@ import traceback
 import sys
 import torch
 import librosa
+import soundfile as sf
 from audioread.exceptions import NoBackendError
 
 # Use this directory structure for your datasets, or modify it to fit your needs
@@ -38,6 +39,7 @@ recognized_datasets = [
 
 #Maximum of generated wavs to keep on memory
 MAX_WAVES = 15
+torch.no_grad()
 
 class Toolbox:
     def __init__(self, datasets_root, enc_models_dir, syn_models_dir, voc_models_dir, low_mem, seed, no_mp3_support):
@@ -105,6 +107,8 @@ class Toolbox:
         func = lambda: self.load_book(self.ui.browse_book())
         self.ui.load_book.clicked.connect(func)
 
+        func = lambda: self.synthBook()
+        self.ui.synth_book.clicked.connect(func)
 
         #
         func = lambda: self.ui.draw_utterance(self.ui.selected_utterance, "current")
@@ -186,18 +190,40 @@ class Toolbox:
             file = open(fpath.absolute().as_posix(),mode='r')
             text = file.read()
             text = text.replace(".",".\n")
+            text = [line for line in text.split('\n') if line.strip() != '']
+            sep = '\n'
+            text  = sep.join(text)
             #text = text.replace(",",",\n")
             #text = text.replace(":",":\n")
             #text = text.replace("-","-\n")
             #text = text.replace("!","!\n")
-            #text = text.replace("?","?\n")
+            #text = text.replace("?","?\n)
             file.close()
             self.ui.text_prompt.appendPlainText(text)
 
         else:
             self.ui.log("Format is not supported")
             return
+    def synthBook(self):
+        k = 0
+        self.ui.log('Book synthesis start')
 
+        texts = self.ui.text_prompt.toPlainText().split("\n")
+        n = 2
+        for i in range(0, len(texts), n):
+            newList = texts[i:i + n]
+            sep = '\n'
+            newText  = sep.join(newList)
+            #self.ui.log(newText)
+            self.ui.text_prompt.clear()
+            self.ui.text_prompt.appendPlainText(newText)
+
+            self.synthesize()
+            self.vocode()
+            percent = str(((k+1)/(len(texts)/n)*100))
+            self.ui.log("Done for " + percent +"%")
+            sf.write("output/{}.wav".format(k), self.current_wav, Synthesizer.sample_rate)
+            k+=1
     def record(self):
         wav = self.ui.record_one(encoder.sampling_rate, 5)
         if wav is None:

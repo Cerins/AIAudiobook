@@ -495,13 +495,13 @@ class UI(QDialog):
 
 
         #Audiobooks
-
-
         self.load_book = QPushButton("Load book")
         browser_layout.addWidget(self.load_book, i, 0)
         
+        #Audiobook synthesis
+        self.synth_book = QPushButton("Synthesise book")
+        browser_layout.addWidget(self.synth_book, i, 1)
         i += 1
-        
         # Random buttons
         self.random_dataset_button = QPushButton("Random")
         browser_layout.addWidget(self.random_dataset_button, i, 0)
